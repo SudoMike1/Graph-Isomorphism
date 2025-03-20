@@ -1,3 +1,7 @@
+from graph import *
+from graph_io import *
+
+
 def stable_coloring(graph):
     coloring = {v: 1 for v in graph.vertices}
     iterations = 0
@@ -36,3 +40,49 @@ def stable_coloring(graph):
         # print(f"Iteration {iterations}: {coloring}")
 
     return coloring, iterations, neighborhood_signatures
+
+
+def basic_colorref(file_path):
+    graphs = load_graphs_from_grl(file_path)
+    colorings = []
+    for index, graph in enumerate(graphs):
+        # print(f"\nProcessing Graph {index}")
+        coloring, iterations, neighborhood_signatures = stable_coloring(graph)
+
+        unique_colors = set(coloring.values())
+        color_classes = sorted([list(coloring.values()).count(color) for color in unique_colors])
+
+
+        discrete = all(size == 1 for size in color_classes)
+
+        # print(f"Final size: {max(coloring.values())}")
+        # print(f"Final coloring: {sorted(coloring.values())}")
+
+        colorings.append((index, color_classes, iterations, discrete, neighborhood_signatures))
+
+    return group_equivalence_classes(colorings)
+
+
+def load_graphs_from_grl(file_path):
+    with open(file_path, 'r') as f:
+        list_of_graphs, title = read_graph_list(Graph, f)
+    return list_of_graphs
+
+
+def group_equivalence_classes(colorings):
+    equivalence_classes = {}
+
+    for index, color_classes, iterations, discrete, neighborhood_signatures in colorings:
+
+        key = (tuple(color_classes), iterations, discrete, tuple(sorted(neighborhood_signatures.values())))
+
+        if key not in equivalence_classes:
+            equivalence_classes[key] = []
+        equivalence_classes[key].append(index)
+
+    result = []
+    for key, indices in equivalence_classes.items():
+        sorted_indices = sorted(indices)
+        result.append((sorted_indices, list(key[0]), key[1], key[2]))
+
+    return result
