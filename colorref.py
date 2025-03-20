@@ -1,5 +1,6 @@
-from graph import *
+
 from graph_io import *
+from graph import *
 
 
 def stable_coloring(graph):
