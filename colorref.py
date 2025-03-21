@@ -27,7 +27,7 @@ def branching_search(graph1: Graph, graph2: Graph, colors1: dict, colors2: dict)
     chosen_vertex_g1 = None
     possible_mapping = []
 
-    for v1, v2 in zip(colors1, colors2):
+    for v1, v2 in zip(graph1.vertices, graph2.vertices):
         if colors1[v1] == biggest_color_class_g1 and chosen_vertex_g1 is None:
             chosen_vertex_g1 = v1
 
@@ -37,6 +37,8 @@ def branching_search(graph1: Graph, graph2: Graph, colors1: dict, colors2: dict)
     for vertex in possible_mapping:
         new_colors1 , new_colors2 = colors1.copy() , colors2.copy()
         new_colors1[vertex], new_colors2[chosen_vertex_g1] = max(unique_colors) + 1
+
+
 
 
 
@@ -150,61 +152,45 @@ def group_equivalence_classes(colorings):
 
 
 
-def get_final_coloring(all_graphs):
-    all_vs = []
+def get_final_coloring(graph1, graph2):
+    # Combine vertices from both graphs
+    all_vs = list(graph1.vertices) + list(graph2.vertices)
 
-    for i, graph in enumerate(all_graphs):
-        all_vs.extend(graph.vertices)
+    # Initialize colors (all start with 1)
+    current_coloring = {v: 1 for v in all_vs}
 
-    current_coloring = {}
-    for v in all_vs:
-        current_coloring[v] = 1
-
+    # Assign colors based on degree
     degree_to_color = {}
     next_col = 1
 
     for v in all_vs:
-        current_n_count = len(v.neighbours)
-        if current_n_count not in degree_to_color:
-            degree_to_color[current_n_count] = next_col
+        degree = len(v.neighbours)
+        if degree not in degree_to_color:
+            degree_to_color[degree] = next_col
             next_col += 1
-        current_coloring[v] = degree_to_color[current_n_count]
-    while True:
-        new_colouring = {}
+        current_coloring[v] = degree_to_color[degree]
 
-        # maps old colors to a list of vertices with that color
+    while True:
+        new_coloring = {}
         old_mapping = {}
 
+        # Group vertices by color
         for v in all_vs:
-            old_color = current_coloring[v]
-
-            # need to check if this color is in old mapping, if not create it, and add it
-            if old_color not in old_mapping:
-                old_mapping[old_color] = []
-
-            old_mapping[old_color].append(v)
+            color = current_coloring[v]
+            old_mapping.setdefault(color, []).append(v)
 
         next_col = 1
-
-        # (neighborprofile > color)
         neighbors_to_color_list = []
+
         for old_col in sorted(old_mapping.keys()):
             vertices_grouped = old_mapping[old_col]
 
             for v in vertices_grouped:
-                neighbour_colors = []
-
-                for current_neighbour in v.neighbours:
-                    neighbour_colors.append(current_coloring[current_neighbour])
-
-                neighbour_colors.sort()
-                current_profile = tuple(neighbour_colors)
-
-                # include old col so different colors but same neighborhood profile remain distinct
-                full_profile = (old_col, current_profile)
+                neighbor_colors = sorted(current_coloring[n] for n in v.neighbours)
+                full_profile = (old_col, tuple(neighbor_colors))
 
                 assigned_color = None
-                for (existing_profile, existing_col) in neighbors_to_color_list:
+                for existing_profile, existing_col in neighbors_to_color_list:
                     if full_profile == existing_profile:
                         assigned_color = existing_col
                         break
@@ -214,12 +200,10 @@ def get_final_coloring(all_graphs):
                     next_col += 1
                     neighbors_to_color_list.append((full_profile, assigned_color))
 
-                new_colouring[v] = assigned_color
+                new_coloring[v] = assigned_color
 
-        # need to check if coloring is the same
-        if new_colouring != current_coloring:
-            current_coloring = new_colouring
-        else:
-            break
+        if new_coloring == current_coloring:
+            break  # Stop when no further refinement occurs
+        current_coloring = new_coloring
 
     return current_coloring
