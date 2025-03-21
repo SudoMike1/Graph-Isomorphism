@@ -1,42 +1,52 @@
+from operator import index
+
 from graph_io import *
 from graph import *
 
-from typing import List, Tuple
-import networkx as nx
 
 
-def is_isomorphic_branching(graph1: nx.Graph, graph2: nx.Graph) -> bool:
-    """
-    Stub implementation of a Graph Isomorphism Branching Algorithm.
-    :param graph1: First input graph.
-    :param graph2: Second input graph.
-    :return: True if graphs are isomorphic, otherwise False.
-    """
-
-    # Step 1: Base Case Checks
-    if len(graph1.nodes) != len(graph2.nodes) or len(graph1.edges) != len(graph2.edges):
-        return False
-
-    # Step 2: Preprocessing - Color Refinement
-    node_colors1 = color_refinement(graph1)
-    node_colors2 = color_refinement(graph2)
-    if sorted(node_colors1.values()) != sorted(node_colors2.values()):
-        return False
-
-    # Step 3: Recursive Branching Search
-    return branching_search(graph1, graph2, node_colors1, node_colors2)
 
 
-def color_refinement(graph: nx.Graph) -> dict:
-    """
-    Stub for color refinement preprocessing.
-    :param graph: Input graph.
-    :return: Dictionary mapping nodes to colors.
-    """
-    return {node: 1 for node in graph.nodes}  # Placeholder: Assigning all nodes the same color
+def get_coloring_classes_sizes(colors):
+    size_of_color_classes = {}
+    for color in colors:
+        if color in size_of_color_classes:
+            size_of_color_classes[color] += 1
+        else:
+            size_of_color_classes[color] = 1
+    return size_of_color_classes
 
 
-def branching_search(graph1: nx.Graph, graph2: nx.Graph, colors1: dict, colors2: dict) -> bool:
+
+def branching_search(graph1: Graph, graph2: Graph, colors1: dict, colors2: dict) -> bool:
+    color_sizes_g1 = get_coloring_classes_sizes(colors1)
+    all_colors = list(colors1.values()) + list(colors2.values())
+    unique_colors = set(all_colors)
+    biggest_color_class_g1 = max(color_sizes_g1)
+
+    chosen_vertex_g1 = None
+    possible_mapping = []
+
+    for v1, v2 in zip(colors1, colors2):
+        if colors1[v1] == biggest_color_class_g1 and chosen_vertex_g1 is None:
+            chosen_vertex_g1 = v1
+
+        if colors2[v2] == biggest_color_class_g1:
+            possible_mapping.append(v2)
+
+    for vertex in possible_mapping:
+        new_colors1 , new_colors2 = colors1.copy() , colors2.copy()
+        new_colors1[vertex], new_colors2[chosen_vertex_g1] = max(unique_colors) + 1
+
+
+
+
+
+
+
+
+
+
     """
     Stub for branching search algorithm.
     :param graph1: First graph.
@@ -49,10 +59,6 @@ def branching_search(graph1: nx.Graph, graph2: nx.Graph, colors1: dict, colors2:
     return True  # Defaulting to True for now
 
 
-# Example Usage
-g1 = nx.Graph([(0, 1), (1, 2), (2, 0)])
-g2 = nx.Graph([(3, 4), (4, 5), (5, 3)])
-print(is_isomorphic_branching(g1, g2))
 
 
 def stable_coloring(graph):
@@ -140,6 +146,9 @@ def group_equivalence_classes(colorings):
         result.append((sorted_indices, list(key[0]), key[1], key[2]))
 
     return result
+
+
+
 
 def get_final_coloring(all_graphs):
     all_vs = []
