@@ -5,7 +5,11 @@ from graph import *
 
 
 
-
+def is_discrete(color_classes):
+    for vertex in color_classes:
+        if color_classes[vertex] != 1:
+            return False
+    return True
 
 def get_coloring_classes_sizes(colors):
     size_of_color_classes = {}
@@ -19,46 +23,62 @@ def get_coloring_classes_sizes(colors):
 
 
 def branching_search(graph1: Graph, graph2: Graph, colors1: dict, colors2: dict) -> bool:
+    """
+        Stub for branching search algorithm.
+        :param graph1: First graph.
+        :param graph2: Second graph.
+        :param colors1: Node color mapping for first graph.
+        :param colors2: Node color mapping for second graph.
+        :return: True if graphs are isomorphic, otherwise False.
+    """
+
     color_sizes_g1 = get_coloring_classes_sizes(colors1)
     all_colors = list(colors1.values()) + list(colors2.values())
     unique_colors = set(all_colors)
-    biggest_color_class_g1 = max(color_sizes_g1)
+    biggest_color_class_g1 = max(color_sizes_g1, key=color_sizes_g1.get)
 
     chosen_vertex_g1 = None
     possible_mapping = []
 
-    for v1, v2 in zip(graph1.vertices, graph2.vertices):
+    for v1 in graph1.vertices:
         if colors1[v1] == biggest_color_class_g1 and chosen_vertex_g1 is None:
             chosen_vertex_g1 = v1
-
+            break
+    for v2 in graph2.vertices:
         if colors2[v2] == biggest_color_class_g1:
             possible_mapping.append(v2)
 
-    for vertex in possible_mapping:
+
+    # we loop through all the vertices that are a possible match
+    for vertex_g2 in possible_mapping:
         new_colors1 , new_colors2 = colors1.copy() , colors2.copy()
-        new_colors1[vertex], new_colors2[chosen_vertex_g1] = max(unique_colors) + 1
+        new_colors1[chosen_vertex_g1], new_colors2[vertex_g2] = max(unique_colors) + 1
 
+        all_vertices_colors = {}
+        for vertex, color in new_colors1.items():
+            all_vertices_colors[vertex] = color
+        for vertex, color in new_colors2.items():
+            all_vertices_colors[vertex] = color
 
+        # we refine the coloring of both graphs
+        coloring = get_final_coloring(graph1, graph2, all_vertices_colors)
 
+        #if the coloring after the refinement is the same: we do go deeper in this branch
+        #else : we finish exploring this branch
+        coloring_g1 = {v: color for v, color in coloring.items() if v in graph1.vertices}
+        coloring_g2 = {v: color for v, color in coloring.items() if v in graph2.vertices}
 
+        if coloring_g1[chosen_vertex_g1] != coloring_g2[vertex_g2]:
+            continue
 
+        if get_coloring_classes_sizes(coloring_g1) == get_coloring_classes_sizes(coloring_g2):
+            if is_discrete(coloring_g1):
+                return True
+            else:
+                if branching_search(graph1, graph2, coloring_g1, coloring_g2):
+                    return True
+    return False
 
-
-
-
-
-
-
-    """
-    Stub for branching search algorithm.
-    :param graph1: First graph.
-    :param graph2: Second graph.
-    :param colors1: Node color mapping for first graph.
-    :param colors2: Node color mapping for second graph.
-    :return: True if graphs are isomorphic, otherwise False.
-    """
-    # Placeholder: Implement branching rules here
-    return True  # Defaulting to True for now
 
 
 
@@ -152,23 +172,14 @@ def group_equivalence_classes(colorings):
 
 
 
-def get_final_coloring(graph1, graph2):
+def get_final_coloring(graph1, graph2 , all_vertices_colors):
     # Combine vertices from both graphs
     all_vs = list(graph1.vertices) + list(graph2.vertices)
 
     # Initialize colors (all start with 1)
-    current_coloring = {v: 1 for v in all_vs}
+    current_coloring = all_vertices_colors
 
-    # Assign colors based on degree
-    degree_to_color = {}
-    next_col = 1
 
-    for v in all_vs:
-        degree = len(v.neighbours)
-        if degree not in degree_to_color:
-            degree_to_color[degree] = next_col
-            next_col += 1
-        current_coloring[v] = degree_to_color[degree]
 
     while True:
         new_coloring = {}
@@ -207,3 +218,22 @@ def get_final_coloring(graph1, graph2):
         current_coloring = new_coloring
 
     return current_coloring
+
+if __name__ == "__main__":
+    path = r"C:\Users\micha\PycharmProjects\mod7-graph-isomorphism\SampleGraphsSetBranching\trees11.grl"
+    result = basic_colorref(path)
+    print(result)
+
+
+list_of_graphs = load_graphs_from_grl(path)
+coloring0 = stable_coloring(list_of_graphs[0])[0]
+print(stable_coloring(list_of_graphs[3])[2])
+print(coloring0)
+coloring3 = stable_coloring(list_of_graphs[3])[0]
+print(stable_coloring(list_of_graphs[3])[2])
+print(coloring3)
+print(branching_search(list_of_graphs[0],list_of_graphs[3] , coloring0, coloring3))
+# for equivalence_class in result:
+#     for graph_indices in equivalence_class:
+#         print(branching_search())
+
