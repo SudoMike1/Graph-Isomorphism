@@ -36,10 +36,28 @@ def branching_search(graph1: Graph, graph2: Graph, colors1: dict, colors2: dict)
     color_sizes_g1 = get_coloring_classes_sizes(colors1)
     all_colors = list(colors1.values()) + list(colors2.values())
     unique_colors = set(all_colors)
-    biggest_color_class_g1 = max(color_sizes_g1, key=color_sizes_g1.get)
 
     chosen_vertex_g1 = None
     possible_mapping = []
+
+    freq = {}
+    for num in all_colors:
+        if num in freq:
+            freq[num] += 1
+        else:
+            freq[num] = 1
+
+    # Step 2: Find the number with the maximum frequency
+    most_frequent = None
+    max_count = 0
+
+    for num, count in freq.items():
+        if count > max_count:
+            max_count = count
+            most_frequent = num
+    # print(all_colors)
+
+    biggest_color_class_g1 = most_frequent
 
     for v1 in graph1.vertices:
         if colors1[v1] == biggest_color_class_g1 and chosen_vertex_g1 is None:
@@ -49,7 +67,7 @@ def branching_search(graph1: Graph, graph2: Graph, colors1: dict, colors2: dict)
         if colors2[v2] == biggest_color_class_g1:
             possible_mapping.append(v2)
 
-    print(possible_mapping)
+    # print(possible_mapping)
 
     # we loop through all the vertices that are a possible match
     for vertex_g2 in possible_mapping:
@@ -65,26 +83,29 @@ def branching_search(graph1: Graph, graph2: Graph, colors1: dict, colors2: dict)
         for vertex, color in new_colors2.items():
             all_vertices_colors[vertex] = color
 
-        print("Trying mapping: G1 vertex", chosen_vertex_g1, "→ G2 vertex", vertex_g2)
-        print("Before refinement:", new_colors1)
-        print("After refinement:", coloring_g1, coloring_g2)
-
         # we refine the coloring of both graphs
         coloring = get_final_coloring(graph1, graph2, all_vertices_colors)
 
-        print("Trying mapping: G1 vertex", chosen_vertex_g1, "→ G2 vertex", vertex_g2)
-        print("Before refinement:", new_colors1)
-        print("After refinement:", coloring_g1, coloring_g2)
+        # print("Trying mapping: G1 vertex", chosen_vertex_g1, "→ G2 vertex", vertex_g2)
+        # print("Before refinement:", new_colors1)
 
         #if the coloring after the refinement is the same: we do go deeper in this branch
         #else : we finish exploring this branch
         coloring_g1 = {v: color for v, color in coloring.items() if v in graph1.vertices}
         coloring_g2 = {v: color for v, color in coloring.items() if v in graph2.vertices}
 
+
         if coloring_g1[chosen_vertex_g1] != coloring_g2[vertex_g2]:
             continue
 
-        if get_coloring_classes_sizes(coloring_g1) == get_coloring_classes_sizes(coloring_g2):
+        print("g1")
+        print(coloring_g1)
+        print("g2")
+        print(coloring_g2)
+        sizes1 = sorted(get_coloring_classes_sizes(coloring_g1).values())
+        sizes2 = sorted(get_coloring_classes_sizes(coloring_g2).values())
+
+        if sizes1 == sizes2:
             if is_discrete(coloring_g1):
                 print("is discrete")
                 return True
@@ -338,19 +359,19 @@ def count_iterations(graph):
     return counter
 
 if __name__ == "__main__":
-    path = "/Users/nazhashas/Downloads/SampleGraphSetBranching/bigtrees1.grl"
+    path = "/Users/nazhashas/Downloads/SampleGraphSetBranching/bigtrees2.grl"
     result = basic_colorref(path)
     print(result)
 
 
 list_of_graphs = load_graphs_from_grl(path)
-coloring0 = stable_coloring(list_of_graphs[0])[0]
+coloring0 = stable_coloring(list_of_graphs[1])[0]
 # print(stable_coloring(list_of_graphs[3])[2])
 # print(coloring0)
 coloring3 = stable_coloring(list_of_graphs[2])[0]
 # print(stable_coloring(list_of_graphs[3])[2])
 # print(coloring3)
-print(branching_search(list_of_graphs[0],list_of_graphs[2] , coloring0, coloring3))
+print(branching_search(list_of_graphs[1],list_of_graphs[2] , coloring0, coloring3))
 # for equivalence_class in result:
 #     for graph_indices in equivalence_class:
 #         print(branching_search())
